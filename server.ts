@@ -6,27 +6,24 @@ import bodyParser from 'body-parser';
 
 dotenv.config();
 
-const app: express.Application = express();
+const chatbotServer: express.Application = express();
+const serverPort: string | number = process.env.PORT || 3000;
 
-const port: string | number = process.env.PORT || 3000;
+chatbotServer.use(cors());
+chatbotServer.use(morgan('dev'));
+chatbotServer.use(bodyParser.json());
 
-app.use(cors());
-
-app.use(morgan('dev'));
-
-app.use(bodyParser.json());
-
-app.get('/', (req: Request, res: Response) => {
-  res.send('Welcome to the chatbot server!');
+chatbotServer.get('/', (req: Request, res: Response) => {
+  res.send('Welcome to the Multi-Language Chatbot Server!');
 });
 
-app.post('/chat', (req: Request, res: Response) => {
+chatbotServer.post('/processMessage', (req: Request, res: Response) => {
   const { message } = req.body;
   res.json({
-    response: `You said: ${message}`,
+    reply: `You said: ${message}`,
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
+chatbotServer.listen(serverPort, () => {
+  console.log(`Chatbot Server is up and running at http://localhost:${serverPort}/`);
 });
