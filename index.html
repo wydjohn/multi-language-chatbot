@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatbot UI</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+  }
+  #chat-container {
+    width: 60%;
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  #chat-log {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  #chat-input {
+    width: calc(100% - 110px);
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  #send-message {
+    width: 100px;
+  }
+</style>
+</head>
+<body>
+<div id="chat-container">
+  <div id="chat-log"></div>
+  <input type="text" id="chat-input" placeholder="Write your message here...">
+  <button id="send-message">Send</button>
+</div>
+<script>
+  const CHAT_API_URL = 'YOUR_SERVER_ENDPOINT';
+  
+  function displayUserMessage(message) {
+    const chatLog = document.getElementById('chat-log');
+    const userMessage = document.createElement('div');
+    userMessage.textContent = `You: ${message}`;
+    chatLog.appendChild(userMessage);
+  }
+  
+  function displayChatbotMessage(message) {
+    const chatLog = document.getElementById('chat-log');
+    const chatbotMessage = document.createElement('div');
+    chatbotMessage.textContent = `Chatbot: ${message}`;
+    chatLog.appendChild(chatbotMessage);
+  }
+
+  function sendMessageToChatbot(message) {
+    fetch(CHAT_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message })
+    })
+    .then(response => response.json())
+    .then(data => {
+      displayChatbotMessage(data.reply);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  }
+  
+  document.getElementById('send-message').addEventListener('click', () => {
+    const chatInput = document.getElementById('chat-input');
+    const message = chatInput.value.trim();
+    if(message) {
+      displayUserMessage(message);
+      sendMessageToChatbot(message);
+      chatInput.value = '';
+    }
+  });
+
+  document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('send-message').click();
+    }
+  });
+  
+</script>
+</body>
+</html>
