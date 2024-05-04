@@ -6,51 +6,46 @@ import bodyParser from 'body-parser';
 
 dotenv.config();
 
-const chatbotServer: express.Application = express();
-const serverPort: string | number = process.env.PORT || 3000;
+const chatbotApp: express.Application = express();
+const appPort: string | number = process.env.PORT || 3000;
 
-// Simple in-memory cache object
-const cache: { [key: string]: string } = {};
+const responseCache: { [key: string]: string } = {};
 
-chatbotServer.use(cors());
-chatbotServer.use(morgan('dev'));
-chatbotServer.use(bodyParser.json());
+chatbotApp.use(cors());
+chatbotApp.use(morgan('dev'));
+chatbotApp.use(bodyParser.json());
 
-// Hypothetical function to generate a reply (could involve complex logic or external API calls)
-const generateReply = (message: string): string => {
-  // Simulating a computationally expensive operation
-  const processedMessage = `Processed reply for: ${message}`;
-  return processedMessage;
+const generateBotReply = (userMessage: string): string => {
+  const processedReply = `Processed reply for: ${userMessage}`;
+  return processedReply;
 };
 
-// Caching wrapper for the generateReply function
-const getCachedReply = (message: string): string => {
-  if (cache[message]) {
+const getCachedOrNewReply = (userMessage: string): string => {
+  if (responseCache[userMessage]) {
     console.log('Fetching from cache');
-    return cache[message];
+    return responseCache[userMessage];
   } else {
     console.log('Generating new reply and caching');
-    const reply = generateReply(message);
-    cache[message] = reply;
+    const reply = generateBotReply(userMessage);
+    responseCache[userMessage] = reply;
     return reply;
   }
 };
 
-chatbotServer.get('/', (req: Request, res: Response) => {
+chatbotApp.get('/', (req: Request, res: Response) => {
   res.send('Welcome to the Multi-Language Chatbot Server!');
 });
 
-chatbotServer.post('/processMessage', (req: Request, res: Response) => {
-  const { message } = req.body;
+chatbotApp.post('/processMessage', (req: Request, res: Response) => {
+  const { message: userMessage } = req.body;
 
-  // Use the caching mechanism
-  const reply = getCachedReply(message);
+  const botReply = getCachedOrNewReply(userMessage);
 
   res.json({
-    reply: reply,
+    reply: botReply,
   });
 });
 
-chatbotServer.listen(serverPort, () => {
-  console.log(`Chatbot Server is up and running at http://localhost:${serverPort}/`);
+chatbotApp.listen(appPort, () => {
+  console.log(`Chatbot Server is up and running at http://localhost:${appPort}/`);
 });
