@@ -1,11 +1,16 @@
-import os
 import spacy
 from langdetect import detect
-from googletrans import Translator, LANGUAGES
+from googletrans import Translator
 
-nlp_en = spacy.load('en_core_web_sm')
+nlp_en = None
 
 translator = Translator()
+
+def get_nlp_en():
+    global nlp_en
+    if nlp_en is None:
+        nlp_en = spacy.load('en_core_web_sm')
+    return nlp_en
 
 def detect_language(text):
     try:
@@ -27,11 +32,11 @@ def process_text_based_on_language(text):
     try:
         lang_code = detect_language(text)
         if lang_code == 'en':
-            doc = nlp_en(text)
+            doc = get_nlp_en()(text)
             return "Processed English text."
         else:
             translated_text = translate_to_english(text)
-            doc = nlp_en(translated_text)
+            doc = get_nlp_en()(translated_text)
             return "Processed non-English text translated to English."
     except Exception as e:
         print(f"Error processing text: {e}")
