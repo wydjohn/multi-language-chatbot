@@ -15,20 +15,35 @@ chatbotApp.use(cors());
 chatbotApp.use(morgan('dev'));
 chatbotApp.use(bodyParser.json());
 
+chatbotApp.use((err: Error, req: Request, res: Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
+});
+
 const generateBotReply = (userMessage: string): string => {
-  const processedReply = `Processed reply for: ${userMessage}`;
-  return processedReply;
+  try {
+    const processedReply = `Processed reply for: ${userMessage}`;
+    return processedReply;
+  } catch (error) {
+    console.error('Error generating bot reply:', error);
+    return 'Sorry, there was an error processing your message.';
+  }
 };
 
 const getCachedOrNewReply = (userMessage: string): string => {
-  if (responseCache[userMessage]) {
-    console.log('Fetching from cache');
-    return responseCache[userMessage];
-  } else {
-    console.log('Generating new reply and caching');
-    const reply = generateBotReply(userMessage);
-    responseCache[userMessage] = reply;
-    return reply;
+  try {
+    if (responseCache[userMessage]) {
+      console.log('Fetching from cache');
+      return responseCache[userMessage];
+    } else {
+      console.log('Generating new reply and caching');
+      const reply = generateBotReply(userMessage);
+      responseCache[userMessage] = reply;
+      return reply;
+    }
+  } catch (error) {
+    console.error('Error in getCachedOrNewReply:', error);
+    return 'Error fetching or generating a new reply.';
   }
 };
 
@@ -37,13 +52,21 @@ chatbotApp.get('/', (req: Request, res: Response) => {
 });
 
 chatbotApp.post('/processMessage', (req: Request, res: Response) => {
-  const { message: userMessage } = req.body;
+  try {
+    const { message: userMessage } = req.body;
+    if (!userMessage) {
+      return res.status(400).json({ error: 'Message content missing.' });
+    }
 
-  const botReply = getCachedOrNewReply(userMessage);
+    const botReply = getCachedOrNewReply(userMessage);
 
-  res.json({
-    reply: botReply,
-  });
+    res.json({
+      reply: botReply,
+    });
+  } catch (error) {
+    console.error('Error in /processMessage endpoint:', error);
+    return res.status(500).send('Error processing your message.');
+  }
 });
 
 chatbotApp.listen(appPort, () => {
