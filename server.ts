@@ -22,12 +22,30 @@ chatbotApp.use((err: Error, req: Request, res: Response, next: express.NextFunct
 
 const generateBotReply = (userMessage: string): string => {
   try {
-    const processedReply = `Processed reply for: ${userMessage}`;
+    const processedReply = generateReplyBasedOnKeywords(userMessage) || `Processed reply for: ${userMessage}`;
     return processedReply;
   } catch (error) {
     console.error('Error generating bot reply:', error);
     return 'Sorry, there was an error processing your message.';
   }
+};
+
+const generateReplyBasedOnKeywords = (message: string): string | null => {
+  const keywordsMap: { [key: string]: string } = {
+    'hello': 'Hello there!',
+    'hola': '¡Hola!',
+    'help': 'How can I assist you?',
+    'ayuda': '¿Cómo puedo ayudarte?',
+  };
+
+  const words = message.toLowerCase().split(' ');
+  for (const word of words) {
+    if (keywordsMap[word]) {
+      return keywordsMap[word];
+    }
+  }
+
+  return null;
 };
 
 const getCachedOrNewReply = (userMessage: string): string => {
