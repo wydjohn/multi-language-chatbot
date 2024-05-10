@@ -4,41 +4,41 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-interface ChatBotResponse {
+interface ChatBotReply {
     message: string;
     error?: string;
 }
 
-export class ApiController {
-    public static async chatWithBot(req: Request, res: Response): Promise<void> {
+export class ChatController {
+    public static async interactWithChatBot(req: Request, res: Response): Promise<void> {
         const { message } = req.body;
         if (!message) {
             return res.status(400).json({ message: 'Message field is required.' });
         }
 
-        const pythonProcess = spawn('python', [`${process.env.PYTHON_SCRIPT_PATH}`, '--message', message]);
+        const chatBotProcess = spawn('python', [`${process.env.CHAT_BOT_SCRIPT_PATH}`, '--message', message]);
 
-        let pythonResponse = '';
+        let chatBotOutput = '';
 
-        pythonProcess.stdout.on('data', (data) => pythonResponse += data.toString());
-        pythonProcess.stderr.on('data', (data) => {
+        chatBotProcess.stdout.on('data', (data) => chatBotOutput += data.toString());
+        chatBotProcess.stderr.on('data', (data) => {
             console.error(`stderr: ${data}`);
-            pythonProcess.kill(); // Ensure to kill the process if there's an error
-            return res.status(500).json({ message: 'An error occurred in the Python script', error: data.toString() });
+            chatBotProcess.kill(); // Ensure to kill the process if there's an error
+            return res.status(500).json({ message: 'An error occurred in the Chat Bot script', error: data.toString() });
         });
 
-        pythonProcess.on('close', (code) => {
+        chatBotProcess.on('close', (code) => {
             if (code !== 0) {
-                console.error('Python script exited with code', code);
-                return res.status(500).json({ message: 'Failed to get response from chatbot', error: 'Non-zero exit code from Python script' });
+                console.error('Chat Bot script exited with code', code);
+                return res.status(500).json({ message: 'Failed to get response from chatbot', error: 'Non-zero exit code from Chat Bot script' });
             }
 
             try {
-                const response: ChatBotResponse = JSON.parse(pythonResponse);
-                res.status(200).json(response);
-            } catch (parseError) {
-                console.error('Parse Error:', parseError);
-                res.status(500).json({ message: 'Failed to parse response', error: parseError.message });
+                const botResponse: ChatBotReply = JSON.parse(chatBotOutput);
+                res.status(200).json(botResponse);
+            } catch (error) {
+                console.error('Parsing Error:', error);
+                res.status(500).json({ message: 'Failed to parse Chat Bot response', error: error.message });
             }
         });
     }
