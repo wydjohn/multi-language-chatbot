@@ -16,21 +16,34 @@ export class ChatController {
             return res.status(400).json({ message: 'Message field is required.' });
         }
 
+        if (!process.env.CHAT_BOT_SCRIPT_PATH) {
+            console.error('CHAT_BOT_SCRIPT_PATH environment variable is not defined.');
+            return res.status(500).json({ message: 'Server configuration error', error: 'CHAT_BOT_SCRIPT_PATH not defined.' });
+        }
+
         const chatBotProcess = spawn('python', [`${process.env.CHAT_BOT_SCRIPT_PATH}`, '--message', message]);
 
         let chatBotOutput = '';
+        let chatBotError = '';
 
         chatBotProcess.stdout.on('data', (data) => chatBotOutput += data.toString());
-        chatBotProcess.stderr.on('data', (data) => {
-            console.error(`stderr: ${data}`);
-            chatBotProcess.kill(); // Ensure to kill the process if there's an error
-            return res.status(500).json({ message: 'An error occurred in the Chat Bot script', error: data.toString() });
+
+        chatBotProcess.stderr.on('data', (data) => chatBotError += data.toString());
+
+        chatBotProcess.on('error', (error) => {
+            console.error(`Spawned process error: ${error}`);
+            return res.status(500).json({ message: 'Failed to start Chat Bot script', error: error.message });
         });
 
         chatBotProcess.on('close', (code) => {
+            if (chatBotError) {
+                console.error(`stderr: ${chatBotError}`);
+                return res.status(500).json({ message: 'An error occurred in the Chat Bot script', error: chatBotError.toString() });
+            }
+
             if (code !== 0) {
                 console.error('Chat Bot script exited with code', code);
-                return res.status(500).json({ message: 'Failed to get response from chatbot', error: 'Non-zero exit code from Chat Bot script' });
+                return res.status(500).json({ message: 'Failed to get response from chatbot', error: `Non-zero exit code from Chat Bot script: ${code}` });
             }
 
             try {
